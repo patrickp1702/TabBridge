@@ -2,7 +2,7 @@
 
 This document explains TabBridge to another AI agent (or a new engineer): what it is for, how every piece connects, what the downloaded connector script does, which security controls exist and where they are enforced, and how to build, test and extend it. `README.md` is the end-user guide; this file is the architecture and threat-model reference. Keep both in sync when behaviour changes.
 
-Everything in this folder is self-contained: no imports leave `tabbridge/`, nothing from the surrounding repository is used, and only Vite, TypeScript and `@types/chrome` are dev dependencies.
+This repository is the whole project: the extension lives at the repository root, nothing imports from outside it, and only Vite, TypeScript and `@types/chrome` are dev dependencies. Paths in this document are relative to the repository root.
 
 ---
 
@@ -47,8 +47,8 @@ Everything is in `chrome.storage.local`, never `sync` (scripts may contain CSRF 
 ## 3. Components and files
 
 ```
-tabbridge/
-├── public/
+TabBridge/                       (repository root)
+├── public/                      copied verbatim into dist/
 │   ├── manifest.json            MV3 manifest (permissions below)
 │   ├── icons/icon128.png        extension icon
 │   ├── popup/popup.html         read-only overview (app bar · site chip · two accordions · footer status bar)
@@ -84,8 +84,11 @@ tabbridge/
 │       ├── builtin.ts           ToolBridge domain + tools, isBuilderActive / withBuilderGrant / purgeExpiredBuilderGrants (per caller), agent-facing messages
 │       ├── import_export.ts     validated, quarantined, previewed import; export
 │       └── storage.ts           the ONLY accessor for chrome.storage.* (domains, profiles, bridge config, stats, audit)
-├── scripts/build.mjs            5 Vite IIFE bundles + static copies → dist/
-└── examples/sample-domain.json  importable sample (arrives disabled)
+├── scripts/build.mjs            6 Vite IIFE bundles (service-worker, bridge, page-injected, popup, options, approve) + public/ copy → dist/
+├── examples/sample-domain.json  importable sample (arrives disabled)
+├── vite.config.ts               IDE / tsconfig anchor only; build.mjs drives Vite programmatically
+├── package.json · tsconfig.json · .gitignore (node_modules/, dist/, *.zip)
+└── README.md · AGENTS.md
 ```
 
 **Manifest**: permissions `tabs, storage, userScripts, alarms, nativeMessaging, tabGroups`; `host_permissions: <all_urls>` (content scripts must be able to run on any page the user might grant); content scripts `content/bridge.js` (ISOLATED) and `content/page-injected.js` (MAIN) at `document_idle`; `minimum_chrome_version: 135` (needed for `chrome.userScripts.execute`); CSP `script-src 'self'; object-src 'self'`; `options_ui` opens in a tab.
@@ -299,24 +302,20 @@ Identifiers: native host `com.tabbridge.connector`; MCP server name `tabbridge`;
 ## 13. Build, test, verify
 
 ```bash
-cd jsapps/tabbridge
-npm install            # vite, typescript, @types/chrome only
+git clone https://github.com/patrickp1702/TabBridge.git
+cd TabBridge
+npm install            # vite, typescript, @types/chrome only (Node.js 18+)
 npm run check          # typecheck + build → dist/ (load this folder unpacked)
 npm run build:zip      # tabbridge.zip
 ```
 
-Tests are not wired into npm yet. The pure modules (`utils/profiles.ts`, `utils/builtin.ts`, `background/mcp-server.ts`, `background/builtin-tools.ts`) have no Chrome dependency and run under `node --experimental-strip-types` after rewriting relative imports to `.ts`. The bash template is exercised end-to-end by driving a fake Chrome (framed native messaging over a pipe) and a fake agent (JSON-RPC lines over stdio) — see git history of the review sessions for the harnesses. UI is checked by serving `dist/` with a `chrome.*` stub.
+`dist/`, `node_modules/` and `*.zip` are git-ignored; never commit build output.
+
+Tests are not part of this repository yet. The pure modules (`utils/profiles.ts`, `utils/builtin.ts`, `background/mcp-server.ts`, `background/builtin-tools.ts`) have no Chrome dependency and run under `node --experimental-strip-types` once their relative imports are rewritten to `.ts`; write new harnesses that way. The bash template is exercised end-to-end by driving a fake Chrome (framed native messaging over a pipe) and a fake agent (JSON-RPC lines over stdio). UI is checked by serving `dist/` with a `chrome.*` stub.
 
 Manual verification checklist in real Chrome after a change: reload the extension → **Allow user scripts** on → import `examples/sample-domain.json`, enable, create a profile → Web MCP: switch on, download a connector, `bash ~/Downloads/tabbridge-connector-<label>.sh`, paste the config into an agent → `tabbridge_status`, a tool call, a confirmation-flagged tool, a ToolBridge `add_tool` with the grant on and off.
 
 ---
-
-## 14a. Publishing hygiene (this is a public repository)
-
-- **Commit identity**: author and committer are always `patrickp1702 <48005784+patrickp1702@users.noreply.github.com>`. Never a personal or employer e-mail address, in commits, docs, comments or sample data.
-- **No internal references**: no internal hostnames, mirrors, app ids, machine paths or company names anywhere in the tree. Sample data uses `example.com`; the only absolute local path in docs is the placeholder `/Users/you/...`.
-- **Lockfile**: every `resolved` URL in `package-lock.json` points at `https://registry.npmjs.org/`. If a lockfile is regenerated behind a private npm mirror, rewrite the host before committing.
-- Before every push, grep the tree and `git log --format='%an <%ae>%n%cn <%ce>%n%B'` for the items above.
 
 ## 14. Extending safely
 
@@ -325,3 +324,12 @@ Manual verification checklist in real Chrome after a change: reload the extensio
 - New envelope fields: the relay must keep its own keys **last**; the reply prefix `{"id":"<id>","line":` is a bash contract.
 - New built-in tools: add to `BUILTIN_TOOLS`, handle in `runBuiltinTool`, validate before `deps.confirm`, write the result `message` for the agent to relay, never return scripts.
 - Never reintroduce `chrome.storage.sync`, `postMessage("*")`, `startsWith(baseUrl)`, `head -c` in the host, content-script storage access, trust derived from a caller label, or adoption of tabs the extension did not open.
+
+---
+
+## 15. Publishing hygiene (this is a public repository)
+
+- **Commit identity**: author and committer are always `patrickp1702 <48005784+patrickp1702@users.noreply.github.com>`. Never a personal or employer e-mail address, in commits, docs, comments or sample data.
+- **No internal references**: no internal hostnames, mirrors, app ids, machine paths or company names anywhere in the tree. Sample data uses `example.com`; the only absolute local path in docs is the placeholder `/Users/you/...`.
+- **Lockfile**: every `resolved` URL in `package-lock.json` points at `https://registry.npmjs.org/`. If a lockfile is regenerated behind a private npm mirror, rewrite the host before committing.
+- Before every push, grep the tree and `git log --format='%an <%ae>%n%cn <%ce>%n%B'` for the items above.

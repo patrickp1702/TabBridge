@@ -33,16 +33,18 @@ Tools are stored in `chrome.storage.local` as plain JSON (device-local — scrip
 
 ## Installation
 
-### 1. Build
+### 1. Clone and build
 
-From the plugin directory:
+Requires Node.js 18+ and npm. Dev dependencies are Vite, TypeScript and `@types/chrome` only.
 
 ```bash
-cd jsapps/tabbridge
+git clone https://github.com/patrickp1702/TabBridge.git
+cd TabBridge
+npm install
 npm run build
 ```
 
-Output goes to `dist/`.
+Output goes to `dist/` at the repository root (git-ignored). `npm run check` typechecks first, `npm run build:zip` also produces `tabbridge.zip`.
 
 ### 2. Load in Chrome
 
@@ -387,38 +389,43 @@ TabBridge reuses only tabs it opened itself. A tab you opened by hand on the sam
 
 ## Project structure (for developers)
 
+Everything lives at the repository root; there is no monorepo above it. The detailed per-file map is in [AGENTS.md section 3](AGENTS.md#3-components-and-files).
+
 ```
-tabbridge/
-├── public/
-│   ├── manifest.json          # MV3 manifest — permissions, content scripts
-│   └── popup/popup.html       # Popup UI shell
+TabBridge/
+├── public/                    # Copied verbatim into dist/
+│   ├── manifest.json          # MV3 manifest — permissions, content scripts, CSP
+│   ├── icons/icon128.png
+│   ├── popup/popup.html       # Popup shell
+│   ├── options/options.html   # Settings page shell
+│   └── approve/approve.html   # Approval window shell (Allow / Deny)
 ├── src/
 │   ├── background/
-│   │   └── service-worker.ts  # Orchestrator — storage lock-down, origin-checked domain tabs, arg validation, rate limit, confirmation, audit
+│   │   ├── service-worker.ts  # Orchestrator — storage lock-down, owned domain tabs, arg validation, rate limit, confirmation, audit
+│   │   ├── native-bridge.ts   # Web MCP: Chrome Native Messaging port to the connector script
+│   │   ├── mcp-server.ts      # Dependency-free MCP (JSON-RPC) server; the extension IS the server
+│   │   ├── builtin-tools.ts   # Native handlers for the ToolBridge domain
+│   │   └── confirm.ts         # Allow / Deny through the approval window, fails closed
 │   ├── content/
-│   │   ├── bridge.ts          # ISOLATED world — asks SW which tools THIS origin may use, relays calls
+│   │   ├── bridge.ts          # ISOLATED world — asks the worker which tools THIS origin may use, relays calls
 │   │   └── page-injected.ts   # MAIN world — builds window.__ext_mcp_tools from metadata (no scripts)
-│   ├── data/
-│   │   └── domains.ts         # MAIN world dispatch — postMessage bridge
-│   ├── background/native-bridge.ts # Web MCP: Chrome Native Messaging port to the connector script
-│   ├── background/mcp-server.ts    # Dependency-free MCP (JSON-RPC) server; the extension IS the server
-│   ├── options/               # Settings page: options.ts (tabs) · domains_view.ts · profiles_view.ts · mcp_panel.ts (connectors + page access)
+│   ├── data/domains.ts        # MAIN-world postMessage dispatch
+│   ├── options/               # Settings page: options.ts (tabs) · domains_view.ts · profiles_view.ts · mcp_panel.ts
 │   │                          #   connector.template.sh (pure-bash relay + native host) · connector_script.ts (fills it)
-│   ├── ui/theme.css           # Design tokens + shared primitives (night theme) for popup, settings and approval window
-│   ├── popup/
-│   │   ├── popup.ts           # Read-only overview: tools this page can use · tools it provides · footer status
-│   │   └── popup.css
-│   ├── types/
-│   │   └── plugin.types.ts    # StoredDomain, StoredTool, PluginStorage
+│   ├── popup/                 # Read-only overview: tools this page can use · tools it provides · status footer
+│   ├── approve/               # Approval window logic + styles
+│   ├── ui/theme.css           # Design tokens + shared primitives for all three pages
+│   ├── types/plugin.types.ts  # Every stored shape (domains, tools, profiles, connectors, page access, session state)
 │   └── utils/
 │       ├── message.ts         # All message type contracts
 │       ├── mcp.ts             # toMcpToolName, native-messaging envelope types
-│       ├── builtin.ts         # The virtual ToolBridge domain + its tool definitions
-│       ├── profiles.ts        # PURE exposure logic: resolveProfileTools / isToolAllowed / lookupConnector / validateArgs / RateLimiter
+│       ├── builtin.ts         # The virtual ToolBridge domain + its tool definitions + grant helpers
+│       ├── profiles.ts        # PURE exposure logic: resolveProfileTools / resolveExposedTools / validateArgs / RateLimiter
 │       ├── import_export.ts   # Validated, quarantined, previewed config import; export
-│       └── storage.ts         # loadDomains/saveDomains — single accessor for chrome.storage.local (domains, profiles, bridge config, stats, audit)
-├── scripts/
-│   └── build.mjs              # Builds 6 IIFE bundles into dist/
-└── dist/                      # Load this folder in Chrome
+│       └── storage.ts         # The only accessor for chrome.storage.* (domains, profiles, bridge config, stats, audit)
+├── scripts/build.mjs          # Builds the 6 IIFE bundles + copies public/ into dist/
+├── examples/sample-domain.json # Importable sample (arrives disabled)
+├── vite.config.ts             # IDE / tsconfig anchor only; build.mjs drives Vite programmatically
+├── package.json · tsconfig.json
+└── dist/                      # Build output — load this folder in Chrome (not committed)
 ```
-
