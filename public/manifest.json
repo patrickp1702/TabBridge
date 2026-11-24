@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "TabBridge",
+  "version": "1.0.0",
+  "minimum_chrome_version": "135",
+  "description": "Turn scripts running in your logged-in browser tabs into MCP tools, for in-page and external AI agents, gated by profiles.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "userScripts",
+    "alarms",
+    "nativeMessaging",
+    "tabGroups"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "TabBridge",
+    "default_icon": {
+      "128": "icons/icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/bridge.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/page-injected.js"
+      ],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    }
+  ],
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "icons": {
+    "128": "icons/icon128.png"
+  }
+}

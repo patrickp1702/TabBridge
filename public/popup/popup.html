@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TabBridge</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="../ui/theme.css" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="appbar">
+    <div class="appbar__brand">
+      <img class="appbar__icon" src="../icons/icon128.png" alt="" width="22" height="22" />
+      <span class="appbar__name">TabBridge</span>
+    </div>
+    <button id="btn-settings" class="iconbtn" title="Settings" aria-label="Open settings">⚙</button>
+  </header>
+
+  <div class="site" id="site" title="">
+    <span class="site__label">This site</span>
+    <span class="site__host" id="site-host">—</span>
+  </div>
+
+  <main class="sections">
+    <!-- 1. Tools this page can use (collapsed by default) -->
+    <details class="acc" id="acc-access">
+      <summary class="acc__summary">
+        <span class="acc__chev" aria-hidden="true"></span>
+        <span class="acc__title">Tools this page can use</span>
+        <span class="acc__meta" id="access-meta"><span class="pill pill--muted">…</span></span>
+      </summary>
+      <div class="acc__body" id="access-body"></div>
+    </details>
+
+    <!-- 2. Tools this page provides (expanded by default) -->
+    <details class="acc" id="acc-provides" open>
+      <summary class="acc__summary">
+        <span class="acc__chev" aria-hidden="true"></span>
+        <span class="acc__title">Tools this page provides</span>
+        <span class="acc__meta" id="provides-meta"><span class="pill pill--muted">…</span></span>
+      </summary>
+      <div class="acc__body" id="provides-body"></div>
+    </details>
+  </main>
+
+  <footer class="statusbar">
+    <span id="mcp-dot" class="status__dot status__dot--disabled"></span>
+    <span id="mcp-summary" class="statusbar__text">…</span>
+    <a id="mcp-link" class="statusbar__link" href="#">Web MCP →</a>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

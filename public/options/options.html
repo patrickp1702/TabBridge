@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TabBridge — Settings</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="../ui/theme.css" />
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body class="options">
+  <header class="header options__header">
+    <div>
+      <h1 class="header__title">TabBridge</h1>
+      <p class="header__sub">Browse, run and edit the MCP tools this plugin provides to the in-page agent and external agents.</p>
+    </div>
+    <nav class="tabs" role="tablist">
+      <a href="#domains" class="tab" data-tab="domains">Domains &amp; Tools</a>
+      <a href="#profiles" class="tab" data-tab="profiles">Profiles</a>
+      <a href="#mcp" class="tab" data-tab="mcp">Web MCP</a>
+    </nav>
+  </header>
+
+  <div id="stale-banner" class="stale-banner" style="display:none">
+    ⚠ The extension's background worker is running an <b>older build</b> than this page (worker <code id="stale-worker"></code>, page <code id="stale-page"></code>).
+    Tool resolution, Web MCP and ToolBridge run in the worker, so what you see here may not be what agents get.
+    Fix: <code>chrome://extensions</code> → TabBridge → <b>Reload</b> (↺), then <b>Retry now</b> on the Web MCP tab and restart the agent's MCP connection.
+  </div>
+
+  <!-- ─── Tab: Domains & Tools ─────────────────────────────────────────── -->
+  <section id="tab-domains" class="tab-panel">
+    <div class="split">
+      <aside class="split__side">
+        <div class="side__head">
+          <span class="section-title">Domains</span>
+          <button id="btn-new-domain" class="btn btn--primary btn--sm">+ Add Domain</button>
+        </div>
+        <ul id="domain-nav" class="domain-nav"></ul>
+        <div class="side__foot">
+          <button id="btn-export" class="btn btn--ghost btn--sm" title="Download all domains and tools as JSON">⬇ Export</button>
+          <button id="btn-import" class="btn btn--ghost btn--sm" title="Merge domains/tools from a JSON file (imported items arrive disabled)">⬆ Import</button>
+          <input id="input-import-file" type="file" accept=".json" style="display:none" />
+          <p id="import-msg" class="card__hint" style="display:none"></p>
+        </div>
+      </aside>
+      <main id="domain-detail" class="split__main">
+        <p class="loading">Select a domain.</p>
+      </main>
+    </div>
+  </section>
+
+  <!-- ─── Tab: Profiles ────────────────────────────────────────────────── -->
+  <section id="tab-profiles" class="tab-panel" style="display:none">
+    <div class="split">
+      <aside class="split__side">
+        <div class="side__head">
+          <span class="section-title">Profiles</span>
+          <button id="btn-new-profile" class="btn btn--primary btn--sm">+ New Profile</button>
+        </div>
+        <ul id="profile-nav" class="domain-nav"></ul>
+        <p class="card__hint" style="margin-top:10px">A profile is the set of tools an agent may see and call. Connector scripts and page access each point at one profile.</p>
+      </aside>
+      <main id="profile-detail" class="split__main">
+        <p class="loading">Select a profile.</p>
+      </main>
+    </div>
+  </section>
+
+  <!-- ─── Tab: Web MCP ─────────────────────────────────────────────────── -->
+  <section id="tab-mcp" class="tab-panel" style="display:none">
+    <main class="options__grid">
+      <section class="card">
+        <div class="card__row">
+          <div>
+            <div class="card__title">Expose tools via Web MCP</div>
+            <div class="card__hint">Connects this extension to the local bridge server so external MCP clients (Claude Code, Claude Desktop…) can call the tools. Tool scripts never leave the browser — the server only relays calls.</div>
+          </div>
+          <label class="toggle">
+            <input id="mcp-enabled" type="checkbox" />
+            <span class="toggle__slider"></span>
+          </label>
+        </div>
+        <div class="status">
+          <span id="mcp-status-dot" class="status__dot status__dot--disabled"></span>
+          <span id="mcp-status-text" class="status__text">Disabled</span>
+          <button id="btn-retry" class="btn btn--ghost btn--sm" style="display:none">Retry now</button>
+        </div>
+        <p id="mcp-status-detail" class="status__detail"></p>
+      </section>
+
+      <section class="card">
+        <div class="card__title">Connector scripts (external agents)</div>
+        <div class="card__hint">Pick a profile, download, run the script once in a terminal — it prints the config to paste into your agent (Claude Code, Claude Desktop, Cursor, …). Each download is its own connector: it exposes <b>only that profile's tools</b>. Validity is decided <b>here</b>, not by the file: when a connector expires or is deactivated the same script is refused, and <b>Extend</b> makes it work again without a new download. Connectors stay listed until you <b>Delete</b> them.</div>
+        <div class="grid-3">
+          <label class="field">
+            <span class="field__label">Profile</span>
+            <select id="mcp-profile" class="field__input"></select>
+          </label>
+          <label class="field">
+            <span class="field__label">Lifetime <span class="field__hint">(days, 1–7)</span></span>
+            <input id="mcp-lifetime" class="field__input" type="number" min="1" max="7" step="1" />
+          </label>
+          <div class="field field--btn">
+            <span class="field__label">&nbsp;</span>
+            <button id="btn-download-script" class="btn btn--primary btn--sm">⬇ Download connector script</button>
+          </div>
+        </div>
+        <label class="field" style="max-width:320px">
+          <span class="field__label">Rate limit <span class="field__hint">(tool calls per minute per connector, 0 = unlimited)</span></span>
+          <input id="mcp-rate" class="field__input" type="number" min="0" max="1000" step="1" />
+        </label>
+        <p id="mcp-download-error" class="form-error" style="display:none"></p>
+        <p id="mcp-download-ok" class="form-success" style="display:none"></p>
+        <div class="block__label" style="margin-top:12px"><span>Connectors</span><span class="card__hint">Deactivate = refused immediately · Extend / Reactivate = valid again for N days · Delete = forgotten for good · 🔒 ToolBridge = this script may create/edit tools for 2 h</span></div>
+        <div id="connector-list" class="conn-list"></div>
+      </section>
+
+      <section class="card">
+        <div class="card__title">Page access (in-page agent)</div>
+        <div class="card__hint">Only pages at these origins receive tools, and only the chosen profile's tools. Every other site gets nothing — tool calls from anywhere else are refused. The 🔒 ToolBridge switch on a row lets the in-page agent at that origin create/edit tools for 2 hours (off by default).</div>
+        <div class="grid-3">
+          <label class="field">
+            <span class="field__label">Page origin</span>
+            <input id="page-origin" class="field__input field__input--mono" type="text" placeholder="https://app.example.com" />
+          </label>
+          <label class="field">
+            <span class="field__label">Profile</span>
+            <select id="page-profile" class="field__input"></select>
+          </label>
+          <div class="field field--btn">
+            <span class="field__label">&nbsp;</span>
+            <button id="btn-add-page" class="btn btn--primary btn--sm">+ Allow page</button>
+          </div>
+        </div>
+        <p id="page-error" class="form-error" style="display:none"></p>
+        <div id="page-list" class="conn-list" style="margin-top:10px"></div>
+        <div class="card__row" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+          <div>
+            <div class="card__title" style="font-size:13px">Allow plain http:// page origins</div>
+            <div class="card__hint">Off (default): grants for <code>http://</code> origins are refused and existing ones are ignored. <code>localhost</code> is always allowed.</div>
+            <div id="http-warning" class="form-error" style="display:none;margin-top:6px">⚠ Warning: pages served over plain HTTP are not protected in transit. Anyone on the same network (public Wi-Fi, a compromised router, a proxy) can inject script into such a page and then call every tool its profile exposes — and ToolBridge, if switched on for that origin. Grant http origins only on networks you trust, with the smallest profile that works.</div>
+          </div>
+          <label class="toggle">
+            <input id="allow-http-pages" type="checkbox" />
+            <span class="toggle__slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card__row">
+          <div>
+            <div class="card__title">Recent agent activity</div>
+            <div class="card__hint">Every tool call made by a connector or a granted page (last 500). Tools marked <b>Require confirmation</b> in Domains &amp; Tools show an approval window before running.</div>
+          </div>
+          <button id="btn-clear-audit" class="btn btn--ghost btn--sm">Clear</button>
+        </div>
+        <div id="audit-list" class="audit-list"></div>
+      </section>
+    </main>
+  </section>
+
+  <!-- Download dialog -->
+  <dialog id="dl-dialog" class="dlg">
+    <form method="dialog" class="dlg__body">
+      <div class="card__title">Download connector script</div>
+      <div class="card__hint" id="dl-profile-line"></div>
+      <label class="field">
+        <span class="field__label">File name <span class="field__hint">(also the connector's label and its MCP server key)</span></span>
+        <div class="field__inline">
+          <span class="chip--mono">tabbridge-connector-</span>
+          <input id="dl-label" class="field__input field__input--mono" type="text" spellcheck="false" />
+          <span class="chip--mono">.sh</span>
+        </div>
+      </label>
+      <div class="card__hint">MCP key: <code id="dl-key"></code> · letters, digits and dashes only</div>
+      <p id="dl-error" class="form-error" style="display:none"></p>
+      <div class="edit__actions" style="margin-top:12px">
+        <button value="cancel" class="btn btn--ghost btn--sm" type="submit">Cancel</button>
+        <span class="spacer"></span>
+        <button id="dl-confirm" value="download" class="btn btn--primary btn--sm" type="submit">⬇ Download</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Extend / reactivate dialog -->
+  <dialog id="ext-dialog" class="dlg">
+    <form method="dialog" class="dlg__body">
+      <div class="card__title" id="ext-title">Extend connector</div>
+      <div class="card__hint" id="ext-line"></div>
+      <label class="field">
+        <span class="field__label">Valid for <span class="field__hint">(days from now, 1–7)</span></span>
+        <input id="ext-days" class="field__input" type="number" min="1" max="7" step="1" value="1" />
+      </label>
+      <div class="card__hint">The existing script keeps working — no new download. Agents using it get access again on their next call.</div>
+      <div class="edit__actions" style="margin-top:12px">
+        <button value="cancel" class="btn btn--ghost btn--sm" type="submit">Cancel</button>
+        <span class="spacer"></span>
+        <button id="ext-confirm" value="extend" class="btn btn--primary btn--sm" type="submit">Extend</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="options.js"></script>
+</body>
+</html>

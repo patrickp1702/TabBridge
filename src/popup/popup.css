@@ -1,0 +1,47 @@
+/* popup.css — popup layout on top of theme.css */
+body { width: 420px; min-height: 240px; display: flex; flex-direction: column; background: var(--surface); }
+
+.appbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.appbar__brand { display: flex; align-items: center; gap: 8px; }
+.appbar__icon { border-radius: 6px; }
+.appbar__name { font-weight: 700; font-size: var(--fs-md); color: var(--text); letter-spacing: -.01em; }
+.iconbtn { width: 30px; height: 30px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 14px; cursor: pointer; }
+.iconbtn:hover { background: var(--gray-100); color: var(--text); }
+
+.site { display: flex; align-items: baseline; gap: 8px; padding: 10px 14px 6px; background: var(--bg); }
+.site__label { color: var(--muted); font-size: var(--fs-xs); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.site__host { font-family: var(--mono); font-size: var(--fs-sm); color: var(--text); word-break: break-all; }
+
+.sections { flex: 1; display: grid; gap: 8px; padding: 8px 12px 12px; align-content: start; background: var(--bg); }
+.acc { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.acc__summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 10px 12px; cursor: pointer; user-select: none; }
+.acc__summary::-webkit-details-marker { display: none; }
+.acc__summary:hover { background: var(--gray-100); }
+.acc__chev { width: 0; height: 0; border-left: 5px solid var(--muted-2); border-top: 4px solid transparent; border-bottom: 4px solid transparent; transition: transform .15s; flex: none; }
+.acc[open] .acc__chev { transform: rotate(90deg); }
+.acc__title { font-weight: 600; font-size: var(--fs-sm); color: var(--text); flex: 1; min-width: 0; }
+.acc__meta { display: flex; align-items: center; gap: 6px; flex: none; max-width: 62%; }
+.acc__body { border-top: 1px solid var(--border); padding: 10px 12px 12px; display: grid; gap: 8px; }
+
+.kv { display: flex; align-items: baseline; gap: 8px; font-size: var(--fs-sm); }
+.kv__k { color: var(--muted); } .kv__v { font-weight: 600; color: var(--text); }
+.tools { display: grid; gap: 6px; }
+.tool { background: var(--gray-100); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; display: grid; gap: 4px; }
+.tool__head { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tool__name { font-family: var(--mono); font-size: var(--fs-xs); color: #c9cbe0; font-weight: 600; word-break: break-all; }
+.tool__desc { color: var(--muted); font-size: var(--fs-xs); line-height: 1.5; }
+.tool__desc--clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.tool__more { justify-self: start; background: none; border: none; color: var(--link); font: inherit; font-size: var(--fs-xs); font-weight: 600; padding: 0; cursor: pointer; }
+.tool__more:hover { text-decoration: underline; }
+
+.url-group { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); }
+.url-group__head { list-style: none; display: flex; align-items: center; gap: 6px; padding: 6px 10px; cursor: pointer; user-select: none; font-size: var(--fs-xs); }
+.url-group__head::-webkit-details-marker { display: none; }
+.url-group[open] > .url-group__head .acc__chev { transform: rotate(90deg); }
+.url-group__url { font-family: var(--mono); color: var(--text); flex: 1; min-width: 0; word-break: break-all; }
+.url-group__count { color: var(--muted); }
+.url-group__body { padding: 0 8px 8px; }
+
+.statusbar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-top: 1px solid var(--border); background: var(--surface); font-size: var(--fs-xs); color: var(--text-2); }
+.statusbar__text { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.statusbar__link { color: var(--link); font-weight: 600; white-space: nowrap; }

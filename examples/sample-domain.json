@@ -1,0 +1,61 @@
+{
+  "domains": [
+    {
+      "baseUrl": "https://logs.example.com",
+      "domainScript": "",
+      "enabled": false,
+      "name": "LogsLocal",
+      "startScript": "https://logs.example.com/",
+      "tools": [
+        {
+          "description": "Sanity-check tool — logs a marker in the domain tab and returns it",
+          "enabled": false,
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {},
+            "required": [],
+            "type": "object"
+          },
+          "name": "testLogs",
+          "toolScript": "console.log('tabbridge'); return { logged: true, value: 'tabbridge' };",
+          "requireConfirmation": true
+        },
+        {
+          "description": "GET /api/relatedlogstemplate for the access logs of one app using the browser session",
+          "enabled": false,
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {},
+            "required": [],
+            "type": "object"
+          },
+          "name": "fetchLogs",
+          "toolScript": "\n\nconst resp = await fetch(\n\n  'https://logs.example.com/searchsse?query=logtype=%22access%22&fromDateTime=22/06/2026%2000:00:00.000&toDateTime=22/06/2026%2023:59:59.999&timezone=Asia/Kolkata&order=desc&range=1-100&appid=12345678&service=tabbridge',\n\n  {\n\n    method: 'GET',\n\n    credentials: 'include',\n\n    headers: {\n\n      accept: 'application/json, text/plain, */*',\n\n      'x-requested-with': 'UI',\n\n    },\n\n  }\n\n);\n\n\n\nif (!resp.ok) {\n\n  throw new Error('HTTP ' + resp.status + ' ' + resp.statusText);\n\n}\n\n\n\n// searchsse may return SSE text rather than JSON\n\nconst contentType = resp.headers.get('content-type') || '';\n\n\n\nif (contentType.includes('application/json')) {\n\n  return await resp.json();\n\n}\n\n\n\nreturn await resp.text();",
+          "requireConfirmation": true
+        },
+        {
+          "name": "readReportTitle",
+          "description": "Example of a page-bound tool: reads the heading of the reports page (navigates the tab to /reports first)",
+          "enabled": false,
+          "url": "/reports",
+          "deferLoading": true,
+          "inputSchema": {
+            "additionalProperties": false,
+            "properties": {},
+            "required": [],
+            "type": "object"
+          },
+          "toolScript": "return { title: document.querySelector('h1')?.textContent ?? null, path: location.pathname };",
+          "requireConfirmation": false
+        }
+      ],
+      "dcs": [
+        {
+          "name": "eu",
+          "baseUrl": "https://logs.eu.example.com"
+        }
+      ]
+    }
+  ],
+  "note": "Example import for TabBridge: Settings → Domains & Tools → Import. Everything arrives disabled; review, then enable."
+}

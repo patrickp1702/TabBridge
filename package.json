@@ -1,0 +1,17 @@
+{
+  "name": "tabbridge",
+  "version": "1.0.0",
+  "description": "TabBridge \u2014 turns scripts running in your logged-in browser tabs into MCP tools for in-page and external AI agents",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "build": "node scripts/build.mjs",
+    "build:zip": "node scripts/build.mjs && rm -f tabbridge.zip && cd dist && zip -r ../tabbridge.zip .",
+    "check": "npm run typecheck && npm run build"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}
